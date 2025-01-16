@@ -2,32 +2,32 @@ package config
 
 import (
 	"bytes"
-	"sync"
-	"time"
-
+	"fmt"
 	"go-micro.dev/v4/config/loader"
 	"go-micro.dev/v4/config/loader/memory"
 	"go-micro.dev/v4/config/reader"
 	"go-micro.dev/v4/config/reader/json"
 	"go-micro.dev/v4/config/source"
+	"sync"
+	"time"
 )
 
 type config struct {
+	// the current values
+	vals reader.Values
 	exit chan bool
+	// the current snapshot
+	snap *loader.Snapshot
 	opts Options
 
 	sync.RWMutex
-	// the current snapshot
-	snap *loader.Snapshot
-	// the current values
-	vals reader.Values
 }
 
 type watcher struct {
 	lw    loader.Watcher
 	rd    reader.Reader
-	path  []string
 	value reader.Value
+	path  []string
 }
 
 func newConfig(opts ...Option) (Config, error) {
@@ -40,7 +40,6 @@ func newConfig(opts ...Option) (Config, error) {
 	if !c.opts.WithWatcherDisabled {
 		go c.run()
 	}
-
 	return &c, nil
 }
 
@@ -126,7 +125,8 @@ func (c *config) run() {
 			case <-done:
 			case <-c.exit:
 			}
-			w.Stop()
+			err := w.Stop()
+			fmt.Println(err.Error())
 		}()
 
 		// block watch
@@ -159,7 +159,7 @@ func (c *config) Scan(v interface{}) error {
 	return c.vals.Scan(v)
 }
 
-// sync loads all the sources, calls the parser and updates the config
+// sync loads all the sources, calls the parser and updates the config.
 func (c *config) Sync() error {
 	if err := c.opts.Loader.Sync(); err != nil {
 		return err
@@ -240,6 +240,9 @@ func (c *config) Bytes() []byte {
 }
 
 func (c *config) Load(sources ...source.Source) error {
+	c.Lock()
+	defer c.Unlock()
+
 	if err := c.opts.Loader.Load(sources...); err != nil {
 		return err
 	}
@@ -248,9 +251,6 @@ func (c *config) Load(sources ...source.Source) error {
 	if err != nil {
 		return err
 	}
-
-	c.Lock()
-	defer c.Unlock()
 
 	c.snap = snap
 	vals, err := c.opts.Reader.Values(snap.ChangeSet)
