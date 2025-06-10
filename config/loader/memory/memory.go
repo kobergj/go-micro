@@ -10,10 +10,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"go-micro.dev/v4/config/loader"
-	"go-micro.dev/v4/config/reader"
-	"go-micro.dev/v4/config/reader/json"
-	"go-micro.dev/v4/config/source"
+	"go-micro.dev/v5/config/loader"
+	"go-micro.dev/v5/config/reader"
+	"go-micro.dev/v5/config/reader/json"
+	"go-micro.dev/v5/config/source"
 )
 
 type memory struct {
@@ -40,6 +40,7 @@ type updateValue struct {
 }
 
 type watcher struct {
+	sync.Mutex
 	value   reader.Value
 	reader  reader.Reader
 	version atomic.Value
@@ -180,9 +181,11 @@ func (m *memory) update() {
 			continue
 		}
 
+		val, _ := vals.Get(w.path...)
+
 		uv := updateValue{
 			version: m.snap.Version,
-			value:   vals.Get(w.path...),
+			value:   val,
 		}
 
 		select {
@@ -286,7 +289,7 @@ func (m *memory) Get(path ...string) (reader.Value, error) {
 
 	// did sync actually work?
 	if m.vals != nil {
-		return m.vals.Get(path...), nil
+		return m.vals.Get(path...)
 	}
 
 	// assuming vals is nil
@@ -304,7 +307,7 @@ func (m *memory) Get(path ...string) (reader.Value, error) {
 	m.vals = v
 
 	if m.vals != nil {
-		return m.vals.Get(path...), nil
+		return m.vals.Get(path...)
 	}
 
 	// ok we're going hardcore now
@@ -427,6 +430,9 @@ func (w *watcher) Next() (*loader.Snapshot, error) {
 }
 
 func (w *watcher) Stop() error {
+	w.Lock()
+	defer w.Unlock()
+
 	select {
 	case <-w.exit:
 	default:

@@ -6,10 +6,10 @@ import (
 	"testing"
 
 	"github.com/urfave/cli/v2"
-	"go-micro.dev/v4"
-	"go-micro.dev/v4/config"
-	"go-micro.dev/v4/config/source"
-	"go-micro.dev/v4/util/cmd"
+	"go-micro.dev/v5"
+	"go-micro.dev/v5/cmd"
+	"go-micro.dev/v5/config"
+	"go-micro.dev/v5/config/source"
 )
 
 func TestCliSourceDefault(t *testing.T) {
@@ -20,6 +20,9 @@ func TestCliSourceDefault(t *testing.T) {
 			// to be able to run inside go test
 			&cli.StringFlag{
 				Name: "test.timeout",
+			},
+			&cli.StringFlag{
+				Name: "test.bench",
 			},
 			&cli.BoolFlag{
 				Name: "test.v",
@@ -53,7 +56,9 @@ func TestCliSourceDefault(t *testing.T) {
 	)
 
 	config.Load(cliSrc)
-	if fval := config.Get("flag").String("default"); fval != expVal {
+	if val, err := config.Get("flag"); err != nil {
+		t.Fatal(err)
+	} else if fval := val.String("default"); fval != expVal {
 		t.Fatalf("default flag value not loaded %v != %v", fval, expVal)
 	}
 }

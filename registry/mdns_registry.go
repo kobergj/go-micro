@@ -16,8 +16,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	log "go-micro.dev/v4/logger"
-	"go-micro.dev/v4/util/mdns"
+	log "go-micro.dev/v5/logger"
+	"go-micro.dev/v5/util/mdns"
 )
 
 var (
@@ -606,6 +606,7 @@ func (m *mdnsWatcher) Stop() {
 	default:
 		close(m.exit)
 		// remove self from the registry
+
 		m.registry.mtx.Lock()
 		delete(m.registry.watchers, m.id)
 		m.registry.mtx.Unlock()
@@ -613,6 +614,6 @@ func (m *mdnsWatcher) Stop() {
 }
 
 // NewRegistry returns a new default registry which is mdns.
-func NewRegistry(opts ...Option) Registry {
+func NewMDNSRegistry(opts ...Option) Registry {
 	return newRegistry(opts...)
 }

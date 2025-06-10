@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"testing"
 
-	"go-micro.dev/v4/errors"
-	"go-micro.dev/v4/registry"
-	"go-micro.dev/v4/selector"
+	"go-micro.dev/v5/errors"
+	"go-micro.dev/v5/registry"
+	"go-micro.dev/v5/selector"
 )
 
 const (
@@ -81,7 +81,6 @@ func TestCallRetry(t *testing.T) {
 			if called == 1 {
 				return errors.InternalServerError("test.error", "retry request")
 			}
-
 			// don't do the call
 			return nil
 		}
@@ -91,6 +90,8 @@ func TestCallRetry(t *testing.T) {
 	c := NewClient(
 		Registry(r),
 		WrapCall(wrap),
+		Retry(RetryAlways),
+		Retries(1),
 	)
 
 	if err := c.Options().Selector.Init(selector.Registry(r)); err != nil {
