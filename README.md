@@ -132,3 +132,4 @@ See [CHANGELOG.md](https://github.com/micro/go-micro/tree/master/CHANGELOG.md) f
 ## License
 
 Go Micro is Apache 2.0 licensed.
+
